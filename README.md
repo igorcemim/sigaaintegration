@@ -1,6 +1,6 @@
 # SIGAA Integration
 
-Este plug-in automatizar a criação de categorias, disciplinas/cursos e incrições de alunos e professores, com base nas informações disponíveis na API REST do SIGAA.
+Este plug-in automatiza o cadastro de categorias, disciplinas/cursos e incrições de alunos e professores, com base nas informações disponíveis na API REST do SIGAA.
 
 # Branching Workflow
 
