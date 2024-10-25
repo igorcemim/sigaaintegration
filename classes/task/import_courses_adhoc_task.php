@@ -38,6 +38,10 @@ class import_courses_adhoc_task extends adhoc_task {
         return get_string('importcourses', 'local_sigaaintegration');
     }
 
+    public function retry_until_success(): bool {
+        return false;
+    }
+
     public function execute() {
         $parameters = $this->get_custom_data();
         $coursessync = new sigaa_courses_sync($parameters->ano, $parameters->periodo);

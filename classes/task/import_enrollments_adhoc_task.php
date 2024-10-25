@@ -38,6 +38,10 @@ class import_enrollments_adhoc_task extends adhoc_task {
         return get_string('importenrollments', 'local_sigaaintegration');
     }
 
+    public function retry_until_success(): bool {
+        return false;
+    }
+
     public function execute() {
         $parameters = $this->get_custom_data();
         $enrollmentssync = new sigaa_enrollments_sync($parameters->ano, $parameters->periodo);

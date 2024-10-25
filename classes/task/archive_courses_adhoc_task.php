@@ -37,6 +37,10 @@ class archive_courses_adhoc_task extends adhoc_task {
         return get_string('archivecourses', 'local_sigaaintegration');
     }
 
+    public function retry_until_success(): bool {
+        return false;
+    }
+
     public function execute() {
         mtrace('Arquivando disciplinas...');
     }
