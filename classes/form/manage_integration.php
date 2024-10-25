@@ -22,7 +22,7 @@
 
 namespace local_sigaaintegration\form;
 
-use local_sigaaintegration\sigaa_period;
+use local_sigaaintegration\sigaa_periodo_letivo;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -64,13 +64,13 @@ class manage_integration extends \moodleform
         if (empty($data['period'])) {
             $errors['period'] = 'O período deve ser informado.';
         }
-        if (!empty($data['period']) && !sigaa_period::validate($data['period'])) {
+        if (!empty($data['period']) && !sigaa_periodo_letivo::validate($data['period'])) {
             $errors['period'] = 'O período informado deve ser válido, utilize o formato ano/semestre. Exemplo: 2024/1';
         }
         if (!empty($data['archivecourses']) && empty($data['periodarchive'])) {
             $errors['periodarchive'] = 'O período deve ser informado.';
         }
-        if (!empty($data['periodarchive']) && !sigaa_period::validate($data['periodarchive'])) {
+        if (!empty($data['periodarchive']) && !sigaa_periodo_letivo::validate($data['periodarchive'])) {
             $errors['periodarchive'] = 'O período informado deve ser válido, utilize o formato ano/semestre. Exemplo: 2024/1';
         }
         return $errors;

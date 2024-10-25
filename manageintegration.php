@@ -20,7 +20,7 @@
  */
 
 use local_sigaaintegration\form\manage_integration;
-use local_sigaaintegration\sigaa_period;
+use local_sigaaintegration\sigaa_periodo_letivo;
 use local_sigaaintegration\task\archive_courses_adhoc_task;
 use local_sigaaintegration\task\import_courses_adhoc_task;
 use local_sigaaintegration\task\import_enrollments_adhoc_task;
@@ -34,7 +34,7 @@ admin_externalpage_setup('local_sigaaintegration_manageintegration');
 
 $form = new manage_integration();
 $form->set_data([
-    'period' => sigaa_period::get_year_period(),
+    'period' => sigaa_periodo_letivo::buildNew()->getPeriodoFormatado(),
 ]);
 
 if ($data = $form->get_data()) {
@@ -55,16 +55,15 @@ if ($data = $form->get_data()) {
     }
 
     if (!empty($task)) {
-        $task->set_custom_data((object) [
-            'year' => explode('/', $data->period)[0],
-            'period' => explode('/', $data->period)[1],
-        ]);
+        $periodoletivo = sigaa_periodo_letivo::buildFromPeriodoFormatado($data->period);
         if (isset($data->archivecourses)) {
-            $task->set_custom_data((object) [
-                'year' => explode('/', $data->periodarchive)[0],
-                'period' => explode('/', $data->periodarchive)[1],
-            ]);
+            $periodoletivo = sigaa_periodo_letivo::buildFromPeriodoFormatado($data->periodarchive);
         }
+
+        $task->set_custom_data((object) [
+            'ano' => $periodoletivo->getAno(),
+            'periodo' => $periodoletivo->getPeriodo(),
+        ]);
 
         \core\task\manager::queue_adhoc_task($task);
     }

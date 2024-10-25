@@ -40,7 +40,7 @@ class import_enrollments_adhoc_task extends adhoc_task {
 
     public function execute() {
         $parameters = $this->get_custom_data();
-        $enrollmentssync = new sigaa_enrollments_sync($parameters->year, $parameters->period);
+        $enrollmentssync = new sigaa_enrollments_sync($parameters->ano, $parameters->periodo);
         $enrollmentssync->sync();
     }
 

@@ -40,7 +40,7 @@ class import_courses_adhoc_task extends adhoc_task {
 
     public function execute() {
         $parameters = $this->get_custom_data();
-        $coursessync = new sigaa_courses_sync($parameters->year, $parameters->period);
+        $coursessync = new sigaa_courses_sync($parameters->ano, $parameters->periodo);
         $coursessync->sync();
     }
 

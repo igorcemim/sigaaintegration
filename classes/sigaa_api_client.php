@@ -36,8 +36,6 @@ class sigaa_api_client  {
 
     private $client;
 
-    private $accesstoken;
-
     private const ENROLLMENTS_URL = "/api/v1/sig/sigaa/matriculados";
 
     private const OAUTH_TOKEN_URL = "/oauth/token";
@@ -48,15 +46,14 @@ class sigaa_api_client  {
         $this->apiclientsecret = $apiclientsecret;
     }
 
-    public function get_enrollments($year, $period) : array {
+    public function get_enrollments(sigaa_periodo_letivo $periodoletivo) : array {
         $response = $this->get_http_client()->get($this->apibaseurl . self::ENROLLMENTS_URL, [
             'headers' => [
                 'Content-Type' => 'application/json',
                 'Authorization' => "Bearer {$this->get_access_token()}",
             ],
             'query' => [
-                'ano' => $year,
-                'periodo' => $period,
+                'periodo_letivo' => $periodoletivo->getPeriodoFormatado(),
             ]
         ]);
 
@@ -74,10 +71,6 @@ class sigaa_api_client  {
     }
 
     protected function get_access_token() : string {
-        if ($this->accesstoken !== null) {
-            return $this->accesstoken;
-        }
-
         $response = $this->get_http_client()->post($this->apibaseurl . self::OAUTH_TOKEN_URL, [
             'headers' => [
                 'Content-Type' => 'application/json'
@@ -99,9 +92,7 @@ class sigaa_api_client  {
             );
         }
 
-        $this->accesstoken = $this->decode($response->getBody()->getContents())['access_token'];
-
-        return $this->accesstoken;
+        return $this->decode($response->getBody()->getContents())['access_token'];
     }
 
     protected function get_http_client() : http_client {

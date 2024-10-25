@@ -32,23 +32,23 @@ use moodle_exception;
 class sigaa_enrollments_sync
 {
 
-    private string $year;
+    private string $ano;
 
-    private string $period;
+    private string $periodo;
 
     private array $courseNotFound = [];
 
     private int $studentroleid;
 
-    public function __construct(string $year, string $period)
+    public function __construct(string $ano, string $periodo)
     {
         $studentroleid = (int) get_config('local_sigaaintegration', 'studentroleid');
         if (!$studentroleid) {
             throw new moodle_exception('ERRO: O papel de estudante não foi configurado.');
         }
 
-        $this->year = $year;
-        $this->period = $period;
+        $this->ano = $ano;
+        $this->periodo = $periodo;
         $this->studentroleid = $studentroleid;
     }
 
@@ -65,7 +65,8 @@ class sigaa_enrollments_sync
 
         // Consulta as matrículas
         $client = new sigaa_api_client($apibaseurl, $apiclientid, $apiclientsecret);
-        $enrollments = $client->get_enrollments($this->year, $this->period);
+        $periodoletivo = sigaa_periodo_letivo::buildFromParameters($this->ano, $this->periodo);
+        $enrollments = $client->get_enrollments($periodoletivo);
 
         mtrace('INFO: Início da importação de matrículas');
 

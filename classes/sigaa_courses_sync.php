@@ -34,9 +34,9 @@ use stdClass;
 class sigaa_courses_sync
 {
 
-    private string $year;
+    private string $ano;
 
-    private string $period;
+    private string $periodo;
 
     private array $arvorecategorias; // @TODO Acabar com essa collection, pode aumentar consumo memória
 
@@ -52,7 +52,7 @@ class sigaa_courses_sync
 
     private object $campometadata;
 
-    public function __construct(string $year, string $period)
+    public function __construct(string $ano, string $periodo)
     {
         global $DB;
 
@@ -99,8 +99,8 @@ class sigaa_courses_sync
 
         $idcategoriabase = get_config('local_sigaaintegration', 'basecategory');
 
-        $this->year = $year;
-        $this->period = $period;
+        $this->ano = $ano;
+        $this->periodo = $periodo;
         $this->arvorecategorias = core_course_category::get_all();
         $this->editingteacherroleid = (int) $idpapelprofessor;
         $this->basecategoryid = (int) $idcategoriabase;
@@ -120,7 +120,8 @@ class sigaa_courses_sync
 
         // Consulta as matrículas
         $client = new sigaa_api_client($apibaseurl, $apiclientid, $apiclientsecret);
-        $matriculas = $client->get_enrollments($this->year, $this->period);
+        $periodoletivo = sigaa_periodo_letivo::buildFromParameters($this->ano, $this->periodo);
+        $matriculas = $client->get_enrollments($periodoletivo);
 
         foreach ($matriculas as $matricula) {
             foreach ($matricula['disciplinas'] as $disciplina) {
