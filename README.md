@@ -36,5 +36,5 @@ Faça clone do repositório dentro da pasta `local/` da instalação do Moodle.
 
 ```
 cd /var/www/html/moodle/local
-git clone git@github.com:igorcemim/sigaaintegration.git
+git clone https://github.com/igorcemim/sigaaintegration.git
 ```
