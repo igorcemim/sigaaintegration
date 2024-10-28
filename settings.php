@@ -69,9 +69,9 @@ if ($ADMIN->fulltree) {
     $settings->add($apiclientsecret);
 
     $settings->add(new admin_setting_heading(
-        'othersettings',
-        new lang_string('othersettings', 'local_sigaaintegration'),
-        ''
+        'userfields_settings',
+        new lang_string('userfields_settings', 'local_sigaaintegration'),
+        new lang_string('userfields_settings_information', 'local_sigaaintegration')
     ));
 
     $cpffieldname = new admin_setting_configtext(
@@ -83,14 +83,20 @@ if ($ADMIN->fulltree) {
     );
     $settings->add($cpffieldname);
 
-    $originfieldname = new admin_setting_configtext(
-        'local_sigaaintegration/originfieldname',
-        new lang_string('originfieldname', 'local_sigaaintegration'),
-        new lang_string('originfieldname_information', 'local_sigaaintegration'),
-        'origem',
+    $settings->add(new admin_setting_heading(
+        'coursefields_settings',
+        new lang_string('coursefields_settings', 'local_sigaaintegration'),
+        new lang_string('coursefields_settings_information', 'local_sigaaintegration')
+    ));
+
+    $periodfieldname = new admin_setting_configtext(
+        'local_sigaaintegration/periodfieldname',
+        new lang_string('periodfieldname', 'local_sigaaintegration'),
+        new lang_string('periodfieldname_information', 'local_sigaaintegration'),
+        'periodo_letivo',
         PARAM_ALPHANUMEXT
     );
-    $settings->add($originfieldname);
+    $settings->add($periodfieldname);
 
     $metadatafieldname = new admin_setting_configtext(
         'local_sigaaintegration/metadatafieldname',
@@ -101,12 +107,26 @@ if ($ADMIN->fulltree) {
     );
     $settings->add($metadatafieldname);
 
+    $settings->add(new admin_setting_heading(
+        'othersettings',
+        new lang_string('othersettings', 'local_sigaaintegration'),
+        ''
+    ));
+
     $basecategory = new admin_settings_coursecat_select(
         'local_sigaaintegration/basecategory',
         new lang_string('basecategory', 'local_sigaaintegration'),
         new lang_string('basecategory_information', 'local_sigaaintegration')
     );
     $settings->add($basecategory);
+
+    $archivecategoryname = new admin_setting_configtext(
+        'local_sigaaintegration/archivecategoryname',
+        new lang_string('archivecategoryname', 'local_sigaaintegration'),
+        new lang_string('archivecategoryname_information', 'local_sigaaintegration'),
+        'Disciplinas antigas'
+    );
+    $settings->add($archivecategoryname);
 
     if (!during_initial_install()) {
         $options = get_default_enrol_roles(context_system::instance());

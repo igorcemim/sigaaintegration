@@ -26,6 +26,10 @@ $string['pluginname'] = 'Integração SIGAA';
 $string['settings'] = 'Integração SIGAA - Configurações';
 $string['apisettings'] = 'Configurações da API';
 $string['apisettings_information'] = 'Configurações de URL e credenciais de acesso para a API do SIGAA.';
+$string['userfields_settings'] = 'Campos de perfil do usuário';
+$string['userfields_settings_information'] = 'Esses campos deverão ser criados manualmente antes da utilização do plug-in.';
+$string['coursefields_settings'] = 'Campos personalizados de curso';
+$string['coursefields_settings_information'] = 'Esses campos deverão ser criados manualmente antes da utilização do plug-in.';
 $string['apibaseurl'] = 'URL base';
 $string['apibaseurl_information'] = 'URL base da API do SIGAA.';
 $string['apiclientid'] = 'Client ID';
@@ -34,13 +38,41 @@ $string['apiclientsecret'] = 'Client Secret';
 $string['apiclientsecret_information'] = 'Client Secret da API do SIGAA.';
 $string['othersettings'] = 'Outras Configurações';
 $string['cpffieldname'] = 'Nome do Campo de CPF';
-$string['cpffieldname_information'] = 'Nome breve do campo personalizado utilizado para armazenar o CPF do professor.';
-$string['originfieldname'] = 'Nome do Campo de Origem';
-$string['originfieldname_information'] = 'Nome breve do campo personalizado utilizado para armazenar a origem do curso.';
+$string['cpffieldname_information'] = '<p>Nome breve do campo personalizado utilizado para armazenar o CPF do professor.<br/>
+Configuração sugerida para o campo:
+    <ul>
+        <li><strong>Tipo:</strong> Campo de uma linha de texto</li>
+        <li><strong>Limite de caracteres:</strong> 11</li>
+        <li><strong>Este campo está trancado:</strong> Sim</li>
+        <li><strong>A informação deve ser única:</strong> Sim</li>
+        <li><strong>Quem pode ver este campo:</strong> Ninguém</li>
+    </ul>
+</p>';
+$string['periodfieldname'] = 'Nome do Campo de Período Letivo';
+$string['periodfieldname_information'] = '<p>Nome breve do campo personalizado utilizado para armazenar o período letivo do curso.<br/>
+Configuração sugerida para o campo:
+        <ul>
+            <li><strong>Tipo:</strong> Texto curto</li>
+            <li><strong>Número máximo de caracteres:</strong> 6</li>
+            <li><strong>Bloqueado:</strong> Sim</li>
+            <li><strong>Visível para:</strong> Ninguém</li>
+        </ul>
+
+</p>';
 $string['metadatafieldname'] = 'Nome do Campo de Metadados';
-$string['metadatafieldname_information'] = 'Nome breve do campo personalizado utilizado para armazenar os metadados do curso.';
+$string['metadatafieldname_information'] = '<p>Nome breve do campo personalizado utilizado para armazenar os metadados do curso.<br/>
+Configuração sugerida para o campo:
+        <ul>
+            <li><strong>Tipo:</strong> Texto curto</li>
+            <li><strong>Número máximo de caracteres:</strong> 1333</li>
+            <li><strong>Bloqueado:</strong> Sim</li>
+            <li><strong>Visível para:</strong> Ninguém</li>
+        </ul>
+</p>';
 $string['basecategory'] = 'Categoria Base';
 $string['basecategory_information'] = 'Categoria onde serão inseridas as categorias e disciplinas importadas.';
+$string['archivecategoryname'] = 'Nome da categoria de disciplinas arquivadas';
+$string['archivecategoryname_information'] = 'Nome utilizado para criar a categoria de disciplinas arquivadas.';
 $string['studentroleid'] = 'Papel de estudante';
 $string['studentroleid_information'] = 'Papel utilizado para inscrever os estudantes nas disciplinas ao importar as matrículas.';
 $string['teacherroleid'] = 'Papel de professor';
