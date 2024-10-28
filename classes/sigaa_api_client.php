@@ -46,6 +46,15 @@ class sigaa_api_client  {
         $this->apiclientsecret = $apiclientsecret;
     }
 
+    public static function create() : sigaa_api_client {
+        // Carrega as credenciais de acesso a API do SIGAA
+        $apibaseurl = get_config('local_sigaaintegration', 'apibaseurl');
+        $apiclientid = get_config('local_sigaaintegration', 'apiclientid');
+        $apiclientsecret = get_config('local_sigaaintegration', 'apiclientsecret');
+
+        return new sigaa_api_client($apibaseurl, $apiclientid, $apiclientsecret);
+    }
+
     public function get_enrollments(sigaa_periodo_letivo $periodoletivo) : array {
         $response = $this->get_http_client()->get($this->apibaseurl . self::ENROLLMENTS_URL, [
             'headers' => [
