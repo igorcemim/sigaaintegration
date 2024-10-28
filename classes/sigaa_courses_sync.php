@@ -147,6 +147,7 @@ class sigaa_courses_sync {
         $infodisciplina->summary = '';
         $infodisciplina->summaryformat = FORMAT_PLAIN;
         $infodisciplina->format = 'topics';
+        $infodisciplina->startdate = time();
 
         return $infodisciplina;
     }
@@ -336,6 +337,7 @@ class sigaa_courses_sync {
         $course->format = $infodisciplina->format;
         $course->idnumber = $infodisciplina->idnumber;
         $course->category = $categoriadisciplina->id;
+        $course->startdate = $infodisciplina->startdate;
 
         // Monta os campos customizados com a origem e os metadados da disciplina
         $course->{'customfield_' . $this->campoperiodoletivo->shortname} = $metadata['periodo'];
