@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-
 /**
  *
  * @package   local_sigaaintegration
@@ -31,14 +30,13 @@ use Exception;
 use moodle_exception;
 use stdClass;
 
-class sigaa_courses_sync
-{
+class sigaa_courses_sync {
 
     private string $ano;
 
     private string $periodo;
 
-    private array $arvorecategorias; // @TODO Acabar com essa collection, pode aumentar consumo memória
+    private array $arvorecategorias;
 
     private array $disciplinascriadas = [];
 
@@ -48,12 +46,11 @@ class sigaa_courses_sync
 
     private object $campocpf;
 
-    private object $campoorigem;
+    private object $campoperiodoletivo;
 
     private object $campometadata;
 
-    public function __construct(string $ano, string $periodo)
-    {
+    public function __construct(string $ano, string $periodo) {
         global $DB;
 
         $idpapelprofessor = get_config('local_sigaaintegration', 'teacherroleid');
@@ -61,27 +58,27 @@ class sigaa_courses_sync
             throw new moodle_exception('ERRO: O papel de professor não foi configurado.');
         }
 
-        $cpffieldname = get_config('local_sigaaintegration', 'cpffieldname');
-        if (!$cpffieldname) {
+        $nomecampocpf = get_config('local_sigaaintegration', 'cpffieldname');
+        if (!$nomecampocpf) {
             throw new moodle_exception('ERRO: O campo de CPF não foi configurado.');
         }
 
-        $campocpf = $DB->get_record('user_info_field', ['shortname' => $cpffieldname]);
+        $campocpf = $DB->get_record('user_info_field', ['shortname' => $nomecampocpf]);
         if (!$campocpf) {
             throw new moodle_exception(
-                'ERRO: O campo de CPF configurado não foi encontrado. nomeCampo: ' . $cpffieldname
+                'ERRO: O campo de CPF configurado não foi encontrado. nomeCampo: ' . $nomecampocpf
             );
         }
 
-        $originfieldname = get_config('local_sigaaintegration', 'originfieldname');
-        if (!$originfieldname) {
-            throw new moodle_exception('ERRO: O campo de Origem não foi configurado.');
+        $nomecampoperiodoletivo = get_config('local_sigaaintegration', 'periodfieldname');
+        if (!$nomecampoperiodoletivo) {
+            throw new moodle_exception('ERRO: O campo de Período Letivo não foi configurado.');
         }
 
-        $campoorigem = $DB->get_record('customfield_field', ['shortname' => $originfieldname]);
-        if (!$campoorigem) {
+        $campoperiodoletivo = $DB->get_record('customfield_field', ['shortname' => $nomecampoperiodoletivo]);
+        if (!$campoperiodoletivo) {
             throw new moodle_exception(
-                'ERRO: O campo de Origem configurado não foi encontrado. nomeCampo: ' . $originfieldname
+                'ERRO: O campo de Período Letivo configurado não foi encontrado. nomeCampo: ' . $nomecampoperiodoletivo
             );
         }
 
@@ -105,21 +102,15 @@ class sigaa_courses_sync
         $this->editingteacherroleid = (int) $idpapelprofessor;
         $this->basecategoryid = (int) $idcategoriabase;
         $this->campocpf = $campocpf;
-        $this->campoorigem = $campoorigem;
+        $this->campoperiodoletivo = $campoperiodoletivo;
         $this->campometadata = $campometadata;
     }
 
-    public function sync(): void
-    {
+    public function sync(): void {
         mtrace('INFO: Importando disciplinas e categorias...');
 
-        // Carrega as credenciais de acesso a API do SIGAA
-        $apibaseurl = get_config('local_sigaaintegration', 'apibaseurl');
-        $apiclientid = get_config('local_sigaaintegration', 'apiclientid');
-        $apiclientsecret = get_config('local_sigaaintegration', 'apiclientsecret');
-
         // Consulta as matrículas
-        $client = new sigaa_api_client($apibaseurl, $apiclientid, $apiclientsecret);
+        $client = sigaa_api_client::create();
         $periodoletivo = sigaa_periodo_letivo::buildFromParameters($this->ano, $this->periodo);
         $matriculas = $client->get_enrollments($periodoletivo);
 
@@ -138,8 +129,7 @@ class sigaa_courses_sync
         }
     }
 
-    private function getInformacoesDisciplina($dadosdisciplina, string $codigodisciplina): stdClass
-    {
+    private function getInformacoesDisciplina($dadosdisciplina, string $codigodisciplina): stdClass {
         // Nome da disciplina.
         // Exemplo: 2024/1 - Redes de Computadores I - POA-SSI306
         $nomedisciplina = $dadosdisciplina['periodo']
@@ -161,8 +151,7 @@ class sigaa_courses_sync
         return $infodisciplina;
     }
 
-    private function buscar_professor_por_cpf(string $cpf): object|false
-    {
+    private function buscar_professor_por_cpf(string $cpf): object|false {
         global $DB;
 
         $sql = <<<EOF
@@ -183,8 +172,7 @@ class sigaa_courses_sync
         return $DB->get_record_sql($sql, $argumentos);
     }
 
-    private function importar_disciplina($dadosmatricula, $dadosdisciplina): void
-    {
+    private function importar_disciplina($dadosmatricula, $dadosdisciplina): void {
         global $DB;
 
         $codigodisciplina = $dadosdisciplina['periodo'] . '-' . $dadosdisciplina['cod_disciplina'];
@@ -257,11 +245,10 @@ class sigaa_courses_sync
     public function criar_arvore_categorias(
         string $nomecurso,
         string $categoriacursoidnumber,
-        int    $semestrecurso,
+        int $semestrecurso,
         string $categoriasemestreidnumber
-    ) : object
-    {
-        $categoriacurso = current(array_filter($this->arvorecategorias, function ($cat) use ($categoriacursoidnumber) {
+    ): object {
+        $categoriacurso = current(array_filter($this->arvorecategorias, function($cat) use ($categoriacursoidnumber) {
             return $cat->idnumber == $categoriacursoidnumber;
         }));
 
@@ -288,7 +275,7 @@ class sigaa_courses_sync
             return $categoriacurso;
         }
 
-        $categoriasemestre = current(array_filter($this->arvorecategorias, function ($cat) use ($categoriasemestreidnumber) {
+        $categoriasemestre = current(array_filter($this->arvorecategorias, function($cat) use ($categoriasemestreidnumber) {
             return $cat->idnumber == $categoriasemestreidnumber;
         }));
 
@@ -321,8 +308,7 @@ class sigaa_courses_sync
      *
      * @throws moodle_exception
      */
-    public function criar_disciplina($categoriadisciplina, $infodisciplina, $dadosmatricula, $dadosdisciplina): object
-    {
+    public function criar_disciplina($categoriadisciplina, $infodisciplina, $dadosmatricula, $dadosdisciplina): object {
         global $CFG;
         require_once($CFG->dirroot . '/course/lib.php');
 
@@ -352,7 +338,7 @@ class sigaa_courses_sync
         $course->category = $categoriadisciplina->id;
 
         // Monta os campos customizados com a origem e os metadados da disciplina
-        $course->{'customfield_' . $this->campoorigem->shortname} = sigaa_constants::PREFIXO_ORIGEM . $metadata['periodo'];
+        $course->{'customfield_' . $this->campoperiodoletivo->shortname} = $metadata['periodo'];
         $course->{'customfield_' . $this->campometadata->shortname} = json_encode($metadata);
 
         $novocurso = create_course($course);
@@ -372,8 +358,7 @@ class sigaa_courses_sync
      * @throws moodle_exception
      * @throws dml_exception
      */
-    public function vincular_professor_disciplina(object $course, object $user): void
-    {
+    public function vincular_professor_disciplina(object $course, object $user): void {
         global $CFG;
         require_once($CFG->dirroot . '/lib/enrollib.php');
 
@@ -387,7 +372,7 @@ class sigaa_courses_sync
         }
 
         $enrolinstances = enrol_get_instances($course->id, true);
-        $manualenrolinstance = current(array_filter($enrolinstances, function ($instance) {
+        $manualenrolinstance = current(array_filter($enrolinstances, function($instance) {
             return $instance->enrol == 'manual';
         }));
         if (empty($manualenrolinstance)) {

@@ -58,13 +58,8 @@ class sigaa_enrollments_sync
      */
     public function sync(): void
     {
-        // Carrega as credenciais de acesso a API do SIGAA
-        $apibaseurl = get_config('local_sigaaintegration', 'apibaseurl');
-        $apiclientid = get_config('local_sigaaintegration', 'apiclientid');
-        $apiclientsecret = get_config('local_sigaaintegration', 'apiclientsecret');
-
         // Consulta as matrículas
-        $client = new sigaa_api_client($apibaseurl, $apiclientid, $apiclientsecret);
+        $client = sigaa_api_client::create();
         $periodoletivo = sigaa_periodo_letivo::buildFromParameters($this->ano, $this->periodo);
         $enrollments = $client->get_enrollments($periodoletivo);
 
