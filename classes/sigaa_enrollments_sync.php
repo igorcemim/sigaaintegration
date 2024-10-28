@@ -27,7 +27,6 @@ namespace local_sigaaintegration;
 use core\context;
 use core_course_category;
 use Exception;
-use moodle_exception;
 
 class sigaa_enrollments_sync
 {
@@ -42,14 +41,9 @@ class sigaa_enrollments_sync
 
     public function __construct(string $ano, string $periodo)
     {
-        $studentroleid = (int) get_config('local_sigaaintegration', 'studentroleid');
-        if (!$studentroleid) {
-            throw new moodle_exception('ERRO: O papel de estudante não foi configurado.');
-        }
-
         $this->ano = $ano;
         $this->periodo = $periodo;
-        $this->studentroleid = $studentroleid;
+        $this->studentroleid = configuration::getIdPapelAluno();
     }
 
     /**
@@ -169,7 +163,7 @@ class sigaa_enrollments_sync
     /**
      * Tenta inscrever o estudante nas disciplinas retornadas pela API do SIGAA.
      */
-    public function enroll_student_into_courses(array $enrollment): void
+    private function enroll_student_into_courses(array $enrollment): void
     {
         $user = $this->search_student($enrollment['login']);
         if (!$user) {

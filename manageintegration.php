@@ -28,6 +28,15 @@ use local_sigaaintegration\task\import_enrollments_adhoc_task;
 require_once('../../config.php');
 require_once($CFG->libdir.'/adminlib.php');
 
+function setTaskData($task, $periodo) {
+    $periodoletivo = sigaa_periodo_letivo::buildFromPeriodoFormatado($periodo);
+
+    $task->set_custom_data((object) [
+        'ano' => $periodoletivo->getAno(),
+        'periodo' => $periodoletivo->getPeriodo(),
+    ]);
+}
+
 $returnurl = new moodle_url('/local/sigaaintegration/manageintegration.php');
 
 admin_externalpage_setup('local_sigaaintegration_manageintegration');
@@ -55,15 +64,13 @@ if ($data = $form->get_data()) {
     }
 
     if (!empty($task)) {
-        $periodoletivo = sigaa_periodo_letivo::buildFromPeriodoFormatado($data->period);
-        if (isset($data->archivecourses)) {
-            $periodoletivo = sigaa_periodo_letivo::buildFromPeriodoFormatado($data->periodarchive);
+        if (isset($data->enrollments) || isset($data->courses)) {
+            setTaskData($task, $data->period);
         }
 
-        $task->set_custom_data((object) [
-            'ano' => $periodoletivo->getAno(),
-            'periodo' => $periodoletivo->getPeriodo(),
-        ]);
+        if (isset($data->archivecourses)) {
+            setTaskData($task, $data->periodarchive);
+        }
 
         \core\task\manager::queue_adhoc_task($task);
     }

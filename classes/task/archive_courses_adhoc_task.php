@@ -27,9 +27,9 @@ namespace local_sigaaintegration\task;
 use core\task\adhoc_task;
 use core_course_category;
 use Exception;
+use local_sigaaintegration\configuration;
 use local_sigaaintegration\sigaa_constants;
 use local_sigaaintegration\sigaa_periodo_letivo;
-use moodle_exception;
 use stdClass;
 
 class archive_courses_adhoc_task extends adhoc_task {
@@ -54,31 +54,9 @@ class archive_courses_adhoc_task extends adhoc_task {
         mtrace('Arquivando disciplinas...');
         $parameters = $this->get_custom_data();
 
-        $nomecategoriadisciplinasarquivadas = get_config('local_sigaaintegration', 'archivecategoryname');
-
-        $nomecampoperiodoletivo = get_config('local_sigaaintegration', 'periodfieldname');
-        if (!$nomecampoperiodoletivo) {
-            throw new moodle_exception('ERRO: O campo de Período Letivo não foi configurado.');
-        }
-
-        $campoperiodoletivo = $DB->get_record('customfield_field', ['shortname' => $nomecampoperiodoletivo]);
-        if (!$campoperiodoletivo) {
-            throw new moodle_exception(
-                'ERRO: O campo de Período Letivo configurado não foi encontrado. nomeCampo: ' . $nomecampoperiodoletivo
-            );
-        }
-
-        $nomecampometadata = get_config('local_sigaaintegration', 'metadatafieldname');
-        if (!$nomecampometadata) {
-            throw new moodle_exception('ERRO: O campo de Metadados não foi configurado.');
-        }
-
-        $campometadata = $DB->get_record('customfield_field', ['shortname' => $nomecampometadata]);
-        if (!$campometadata) {
-            throw new moodle_exception(
-                'ERRO: O campo de Metadados configurado não foi encontrado. nomeCampo: ' . $nomecampometadata
-            );
-        }
+        $nomecategoriadisciplinasarquivadas = configuration::getNomeCampoDisciplinasArquivadas();
+        $campoperiodoletivo = configuration::getCampoPeriodoLetivo();
+        $campometadata = configuration::getCampoMetadata();
 
         $periodoletivo = sigaa_periodo_letivo::buildFromParameters($parameters->ano, $parameters->periodo);
 

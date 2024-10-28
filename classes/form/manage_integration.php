@@ -61,17 +61,21 @@ class manage_integration extends \moodleform
     public function validation($data, $files)
     {
         $errors = [];
-        if (empty($data['period'])) {
-            $errors['period'] = 'O período deve ser informado.';
+        if (isset($data['courses']) || isset($data['enrollments'])) {
+            if (empty($data['period'])) {
+                $errors['period'] = 'O período deve ser informado.';
+            }
+            if (!sigaa_periodo_letivo::validate($data['period'])) {
+                $errors['period'] = 'O período informado deve ser válido, utilize o formato ano/período. Exemplo: 2024/1';
+            }
         }
-        if (!empty($data['period']) && !sigaa_periodo_letivo::validate($data['period'])) {
-            $errors['period'] = 'O período informado deve ser válido, utilize o formato ano/semestre. Exemplo: 2024/1';
-        }
-        if (!empty($data['archivecourses']) && empty($data['periodarchive'])) {
-            $errors['periodarchive'] = 'O período deve ser informado.';
-        }
-        if (!empty($data['periodarchive']) && !sigaa_periodo_letivo::validate($data['periodarchive'])) {
-            $errors['periodarchive'] = 'O período informado deve ser válido, utilize o formato ano/semestre. Exemplo: 2024/1';
+        if (isset($data['archivecourses'])) {
+            if (empty($data['periodarchive'])) {
+                $errors['periodarchive'] = 'O período deve ser informado.';
+            }
+            if (!sigaa_periodo_letivo::validate($data['periodarchive'])) {
+                $errors['periodarchive'] = 'O período informado deve ser válido, utilize o formato ano/período. Exemplo: 2024/1';
+            }
         }
         return $errors;
     }

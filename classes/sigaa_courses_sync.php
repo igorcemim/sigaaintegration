@@ -36,8 +36,6 @@ class sigaa_courses_sync {
 
     private string $periodo;
 
-    private array $arvorecategorias;
-
     private array $disciplinascriadas = [];
 
     private int $basecategoryid;
@@ -51,59 +49,13 @@ class sigaa_courses_sync {
     private object $campometadata;
 
     public function __construct(string $ano, string $periodo) {
-        global $DB;
-
-        $idpapelprofessor = get_config('local_sigaaintegration', 'teacherroleid');
-        if (!$idpapelprofessor) {
-            throw new moodle_exception('ERRO: O papel de professor não foi configurado.');
-        }
-
-        $nomecampocpf = get_config('local_sigaaintegration', 'cpffieldname');
-        if (!$nomecampocpf) {
-            throw new moodle_exception('ERRO: O campo de CPF não foi configurado.');
-        }
-
-        $campocpf = $DB->get_record('user_info_field', ['shortname' => $nomecampocpf]);
-        if (!$campocpf) {
-            throw new moodle_exception(
-                'ERRO: O campo de CPF configurado não foi encontrado. nomeCampo: ' . $nomecampocpf
-            );
-        }
-
-        $nomecampoperiodoletivo = get_config('local_sigaaintegration', 'periodfieldname');
-        if (!$nomecampoperiodoletivo) {
-            throw new moodle_exception('ERRO: O campo de Período Letivo não foi configurado.');
-        }
-
-        $campoperiodoletivo = $DB->get_record('customfield_field', ['shortname' => $nomecampoperiodoletivo]);
-        if (!$campoperiodoletivo) {
-            throw new moodle_exception(
-                'ERRO: O campo de Período Letivo configurado não foi encontrado. nomeCampo: ' . $nomecampoperiodoletivo
-            );
-        }
-
-        $metadatafieldname = get_config('local_sigaaintegration', 'metadatafieldname');
-        if (!$metadatafieldname) {
-            throw new moodle_exception('ERRO: O campo de Metadados não foi configurado.');
-        }
-
-        $campometadata = $DB->get_record('customfield_field', ['shortname' => $metadatafieldname]);
-        if (!$campometadata) {
-            throw new moodle_exception(
-                'ERRO: O campo de Metadados configurado não foi encontrado. nomeCampo: ' . $metadatafieldname
-            );
-        }
-
-        $idcategoriabase = get_config('local_sigaaintegration', 'basecategory');
-
         $this->ano = $ano;
         $this->periodo = $periodo;
-        $this->arvorecategorias = core_course_category::get_all();
-        $this->editingteacherroleid = (int) $idpapelprofessor;
-        $this->basecategoryid = (int) $idcategoriabase;
-        $this->campocpf = $campocpf;
-        $this->campoperiodoletivo = $campoperiodoletivo;
-        $this->campometadata = $campometadata;
+        $this->editingteacherroleid = configuration::getIdPapelProfessor();
+        $this->basecategoryid = configuration::getIdCategoriaBase();
+        $this->campocpf = configuration::getCampoCPF();
+        $this->campoperiodoletivo = configuration::getCampoPeriodoLetivo();
+        $this->campometadata = configuration::getCampoMetadata();
     }
 
     public function sync(): void {
@@ -199,29 +151,7 @@ class sigaa_courses_sync {
         try {
             $disciplina = $this->criar_disciplina($categoriadisciplina, $infodisciplina, $dadosmatricula, $dadosdisciplina);
 
-            // Vincula o(s) professor(es)
-            foreach ($dadosdisciplina['docentes'] as $docente) {
-                // Busca o usuário pelo CPF
-                if (empty($docente['cpf_docente'])) {
-                    mtrace(sprintf(
-                        'ERRO: Professor sem CPF cadastrado no SIGAA. Não é possível inscrever na disciplina. nome: %s',
-                        $docente['docente']
-                    ));
-                    continue;
-                }
-
-                $usuariodocente = $this->buscar_professor_por_cpf($docente['cpf_docente']);
-                if (!$usuariodocente) {
-                    throw new moodle_exception(sprintf(
-                        'ERRO: Professor não encontrado. Disciplina não foi criada. professor: %s, disciplina: %s',
-                        $docente['cpf_docente'],
-                        $disciplina->idnumber
-                    ));
-                }
-
-                // Realiza inscrição
-                $this->vincular_professor_disciplina($disciplina, $usuariodocente);
-            }
+            $this->vincular_professores_disciplina($dadosdisciplina['docentes'], $disciplina);
 
             $transaction->allow_commit();
 
@@ -243,16 +173,15 @@ class sigaa_courses_sync {
      *
      * @throws moodle_exception
      */
-    public function criar_arvore_categorias(
+    private function criar_arvore_categorias(
         string $nomecurso,
         string $categoriacursoidnumber,
         int $semestrecurso,
         string $categoriasemestreidnumber
     ): object {
-        $categoriacurso = current(array_filter($this->arvorecategorias, function($cat) use ($categoriacursoidnumber) {
-            return $cat->idnumber == $categoriacursoidnumber;
-        }));
+        global $DB;
 
+        $categoriacurso = $DB->get_record('course_categories', ['idnumber' => $categoriacursoidnumber]);
         if (!$categoriacurso) {
             $category = new stdClass();
             $category->name = string_helper::capitalize($nomecurso);
@@ -261,7 +190,6 @@ class sigaa_courses_sync {
 
             $categoriacurso = core_course_category::create($category);
 
-            $this->arvorecategorias[$categoriacurso->id] = $categoriacurso;
             mtrace(sprintf(
                 'INFO: Categoria de curso criada. idnumbercategoria: %s, curso: %s',
                 $categoriacurso->idnumber,
@@ -276,10 +204,7 @@ class sigaa_courses_sync {
             return $categoriacurso;
         }
 
-        $categoriasemestre = current(array_filter($this->arvorecategorias, function($cat) use ($categoriasemestreidnumber) {
-            return $cat->idnumber == $categoriasemestreidnumber;
-        }));
-
+        $categoriasemestre = $DB->get_record('course_categories', ['idnumber' => $categoriasemestreidnumber]);
         if (!$categoriasemestre) {
             $category = new stdClass();
             $category->name = "Semestre {$semestrecurso}";
@@ -287,8 +212,6 @@ class sigaa_courses_sync {
             $category->idnumber = $categoriasemestreidnumber;
 
             $categoriasemestre = core_course_category::create($category);
-
-            $this->arvorecategorias[$categoriasemestre->id] = $categoriasemestre;
 
             mtrace(sprintf(
                 'INFO: Categoria de semestre criada. idnumbercategoria: %s, curso: %s, semestre: %s',
@@ -309,7 +232,7 @@ class sigaa_courses_sync {
      *
      * @throws moodle_exception
      */
-    public function criar_disciplina($categoriadisciplina, $infodisciplina, $dadosmatricula, $dadosdisciplina): object {
+    private function criar_disciplina($categoriadisciplina, $infodisciplina, $dadosmatricula, $dadosdisciplina): object {
         global $CFG;
         require_once($CFG->dirroot . '/course/lib.php');
 
@@ -354,13 +277,52 @@ class sigaa_courses_sync {
         return $novocurso;
     }
 
+    private function vincular_professores_disciplina(array $docentes, object $disciplina): void {
+        $professorescadastrados = [];
+
+        // Vincula o(s) professor(es)
+        foreach ($docentes as $docente) {
+            if (empty($docente['cpf_docente'])) {
+                mtrace(sprintf(
+                    'ERRO: Professor sem CPF cadastrado no SIGAA. Não é possível inscrever na disciplina. nome: %s',
+                    $docente['docente']
+                ));
+                continue;
+            }
+
+            // Busca o usuário pelo CPF
+            $usuariodocente = $this->buscar_professor_por_cpf($docente['cpf_docente']);
+            if (!$usuariodocente) {
+                mtrace(sprintf(
+                    'ERRO: Professor não encontrado. professor: %s, disciplina: %s',
+                    $docente['cpf_docente'],
+                    $disciplina->idnumber
+                ));
+                continue;
+            }
+
+            // Realiza inscrição
+            $this->vincular_professor($disciplina, $usuariodocente);
+
+            $professorescadastrados[] = $docente['cpf_docente'];
+        }
+
+        // Lança exceção para reverter a transação caso não tenha sido possível cadastrar nenhum professor
+        if (empty($professorescadastrados)) {
+            throw new moodle_exception(sprintf(
+                'ERRO: Não foi possível cadastrar nenhum professor. disciplina: %s',
+                $disciplina->idnumber
+            ));
+        }
+    }
+
     /**
      * Inscreve o professor ao curso e vincula as roles necessárias no contexto do curso.
      *
      * @throws moodle_exception
      * @throws dml_exception
      */
-    public function vincular_professor_disciplina(object $course, object $user): void {
+    private function vincular_professor(object $course, object $user): void {
         global $CFG;
         require_once($CFG->dirroot . '/lib/enrollib.php');
 
