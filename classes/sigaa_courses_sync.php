@@ -81,7 +81,7 @@ class sigaa_courses_sync {
         }
     }
 
-    private function getInformacoesDisciplina($dadosdisciplina, string $codigodisciplina): stdClass {
+    private function getInformacoesDisciplina($dadosdisciplina): stdClass {
         // Nome da disciplina.
         // Exemplo: 2024/1 - Redes de Computadores I - POA-SSI306
         $nomedisciplina = $dadosdisciplina['periodo']
@@ -90,12 +90,12 @@ class sigaa_courses_sync {
 
         // Código da disciplina.
         // Exemplo: 2024/1-POA-SSI306
-        $idnumber = $dadosdisciplina['periodo'] . '-' . $codigodisciplina;
+        $codigodisciplina = $dadosdisciplina['periodo'] . '-' . $dadosdisciplina['cod_disciplina'];
 
         $infodisciplina = new stdClass();
         $infodisciplina->fullname = $nomedisciplina;
         $infodisciplina->shortname = $nomedisciplina;
-        $infodisciplina->idnumber = $idnumber;
+        $infodisciplina->idnumber = $codigodisciplina;
         $infodisciplina->summary = '';
         $infodisciplina->summaryformat = FORMAT_PLAIN;
         $infodisciplina->format = 'topics';
@@ -128,14 +128,10 @@ class sigaa_courses_sync {
     private function importar_disciplina($dadosmatricula, $dadosdisciplina): void {
         global $DB;
 
-        $codigodisciplina = $dadosdisciplina['periodo'] . '-' . $dadosdisciplina['cod_disciplina'];
-
-        if (array_search($codigodisciplina, $this->disciplinascriadas)) {
+        $infodisciplina = $this->getInformacoesDisciplina($dadosdisciplina);
+        if (array_search($infodisciplina->idnumber, $this->disciplinascriadas)) {
             return;
         }
-
-        // Dados da disciplina/curso
-        $infodisciplina = $this->getInformacoesDisciplina($dadosdisciplina, $codigodisciplina);
 
         // Categoria da disciplina
         $semestreidnumber = $dadosmatricula['id_curso'] . '-' . (int) $dadosdisciplina['semestre_oferta_disciplina'];
@@ -155,7 +151,7 @@ class sigaa_courses_sync {
 
             $transaction->allow_commit();
 
-            $this->disciplinascriadas[] = $codigodisciplina;
+            $this->disciplinascriadas[] = $infodisciplina->idnumber;
         } catch (Exception $exception) {
             mtrace('ERRO: Falha ao importar disciplina. erro:' . $exception->getMessage());
             $transaction->rollback($exception);
