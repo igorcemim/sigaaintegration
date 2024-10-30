@@ -24,10 +24,10 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2024102801;
+$plugin->version = 2024103001;
 $plugin->requires = 2023100400;
 $plugin->component = 'local_sigaaintegration';
 $plugin->maturity = MATURITY_STABLE;
-$plugin->release = 'v1.0.5';
+$plugin->release = 'v1.0.6';
 
 $plugin->dependencies = [];
