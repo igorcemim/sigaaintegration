@@ -81,6 +81,7 @@ $string['manageintegration'] = 'Integração SIGAA - Gerenciar Integração';
 $string['period'] = 'Período Letivo (ano/período)';
 $string['period_help'] = 'Informe o Período Letivo (ano/período) para qual o processamento será realizado.';
 $string['importenrollments'] = 'Importar matrículas';
+$string['importenrollments_scheduled'] = 'Importar matrículas (agendada)';
 $string['importcourses'] = 'Importar disciplinas e categorias';
 $string['archivecourses'] = 'Arquivar disciplinas';
 $string['import'] = 'Importar';

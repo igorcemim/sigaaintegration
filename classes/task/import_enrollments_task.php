@@ -36,7 +36,7 @@ class import_enrollments_task extends scheduled_task {
      * @return string
      */
     public function get_name() {
-        return get_string('importenrollments', 'local_sigaaintegration');
+        return get_string('importenrollments_scheduled', 'local_sigaaintegration');
     }
 
     public function execute() {

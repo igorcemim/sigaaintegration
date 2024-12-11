@@ -25,7 +25,6 @@ namespace local_sigaaintegration;
 
 use core\context;
 use core_course_category;
-use dml_exception;
 use Exception;
 use moodle_exception;
 use stdClass;
@@ -126,35 +125,34 @@ class sigaa_courses_sync {
     }
 
     private function importar_disciplina($dadosmatricula, $dadosdisciplina): void {
-        global $DB;
-
         $infodisciplina = $this->getInformacoesDisciplina($dadosdisciplina);
         if (array_search($infodisciplina->idnumber, $this->disciplinascriadas)) {
             return;
         }
 
-        // Categoria da disciplina
-        $semestreidnumber = $dadosmatricula['id_curso'] . '-' . (int) $dadosdisciplina['semestre_oferta_disciplina'];
-        $semestrecurso = (int) $dadosdisciplina['semestre_oferta_disciplina'];
-        $categoriadisciplina = $this->criar_arvore_categorias(
-            $dadosmatricula['curso'],
-            $dadosmatricula['id_curso'],
-            $semestrecurso,
-            $semestreidnumber
-        );
+        $peloMenosUmProfessorEncontrado = $this->validar_professores_disciplina($dadosdisciplina['docentes']);
+        if (!$peloMenosUmProfessorEncontrado) {
+            mtrace(sprintf(
+                'ERRO: Nenhum professor da disciplina foi encontrado. Disciplina não criada. disciplina: %s',
+                $infodisciplina->idnumber
+            ));
+            return;
+        }
 
-        $transaction = $DB->start_delegated_transaction();
         try {
+            $categoriadisciplina = $this->criar_arvore_categorias($dadosmatricula, $dadosdisciplina);
+
             $disciplina = $this->criar_disciplina($categoriadisciplina, $infodisciplina, $dadosmatricula, $dadosdisciplina);
 
             $this->vincular_professores_disciplina($dadosdisciplina['docentes'], $disciplina);
 
-            $transaction->allow_commit();
-
             $this->disciplinascriadas[] = $infodisciplina->idnumber;
         } catch (Exception $exception) {
-            mtrace('ERRO: Falha ao importar disciplina. erro:' . $exception->getMessage());
-            $transaction->rollback($exception);
+            mtrace(sprintf(
+                'ERRO: Falha ao importar disciplina. erro: %s, disciplina: %s',
+                $exception->getMessage(),
+                $infodisciplina->idnumber
+            ));
         }
     }
 
@@ -169,20 +167,37 @@ class sigaa_courses_sync {
      *
      * @throws moodle_exception
      */
-    private function criar_arvore_categorias(
-        string $nomecurso,
-        string $categoriacursoidnumber,
-        int $semestrecurso,
-        string $categoriasemestreidnumber
-    ): object {
+    private function criar_arvore_categorias(array $dadosmatricula, array $dadosdisciplina): object {
         global $DB;
+
+        $nomecurso = $dadosmatricula['curso'];
+        $categoriacursoidnumber = $dadosmatricula['id_curso'];
+        $categoriasemestreidnumber = $dadosmatricula['id_curso'] . '-' . (int) $dadosdisciplina['semestre_oferta_disciplina'];
+        $semestrecurso = (int) $dadosdisciplina['semestre_oferta_disciplina'];
+        $nivelcurso = $this->nivelCurso($dadosmatricula['curso_nivel']);
+
+        $categorianivel = $DB->get_record('course_categories', ['idnumber' => $nivelcurso->idnumber]);
+        if (!$categorianivel) {
+            $category = new stdClass();
+            $category->name = $nivelcurso->nome;
+            $category->idnumber = $nivelcurso->idnumber;
+            $category->parent = $this->basecategoryid;
+
+            $categorianivel = core_course_category::create($category);
+
+            mtrace(sprintf(
+                'INFO: Categoria de nível do curso criada. idnumbercategoria: %s, curso: %s',
+                $categorianivel->idnumber,
+                $nomecurso
+            ));
+        }
 
         $categoriacurso = $DB->get_record('course_categories', ['idnumber' => $categoriacursoidnumber]);
         if (!$categoriacurso) {
             $category = new stdClass();
             $category->name = string_helper::capitalize($nomecurso);
             $category->idnumber = $categoriacursoidnumber;
-            $category->parent = $this->basecategoryid;
+            $category->parent = $categorianivel->id;
 
             $categoriacurso = core_course_category::create($category);
 
@@ -274,8 +289,6 @@ class sigaa_courses_sync {
     }
 
     private function vincular_professores_disciplina(array $docentes, object $disciplina): void {
-        $professorescadastrados = [];
-
         // Vincula o(s) professor(es)
         foreach ($docentes as $docente) {
             if (empty($docente['cpf_docente'])) {
@@ -299,24 +312,11 @@ class sigaa_courses_sync {
 
             // Realiza inscrição
             $this->vincular_professor($disciplina, $usuariodocente);
-
-            $professorescadastrados[] = $docente['cpf_docente'];
-        }
-
-        // Lança exceção para reverter a transação caso não tenha sido possível cadastrar nenhum professor
-        if (empty($professorescadastrados)) {
-            throw new moodle_exception(sprintf(
-                'ERRO: Não foi possível cadastrar nenhum professor. disciplina: %s',
-                $disciplina->idnumber
-            ));
         }
     }
 
     /**
      * Inscreve o professor ao curso e vincula as roles necessárias no contexto do curso.
-     *
-     * @throws moodle_exception
-     * @throws dml_exception
      */
     private function vincular_professor(object $course, object $user): void {
         global $CFG;
@@ -351,6 +351,71 @@ class sigaa_courses_sync {
             $user->username,
             $course->idnumber
         ));
+    }
+
+    private function validar_professores_disciplina(array $docentes): bool {
+        $professoresencontrados = [];
+
+        foreach ($docentes as $docente) {
+            if (empty($docente['cpf_docente'])) {
+                continue;
+            }
+
+            $usuariodocente = $this->buscar_professor_por_cpf($docente['cpf_docente']);
+            if (!$usuariodocente) {
+                continue;
+            }
+
+            $professoresencontrados[] = $docente['cpf_docente'];
+        }
+
+        if (!empty($professoresencontrados)) {
+            return true;
+        }
+
+        // nenhum professor encontrado
+        return false;
+    }
+
+    private function nivelCurso(string $cursonivel): stdClass {
+        $nome = 'Outros';
+        $idnumber = 'outros';
+
+        if ($cursonivel == 'E' || $cursonivel == 'L' || $cursonivel == 'S') {
+            $nome = 'Cursos de Pós Graduação';
+            $idnumber = 'pos-graduacao';
+        }
+
+        if ($cursonivel == 'G') {
+            $nome = 'Cursos Superiores';
+            $idnumber = 'superiores';
+        }
+
+        if ($cursonivel == 'T' || $cursonivel == 'N' || $cursonivel == 'M') {
+            $nome = 'Cursos Técnicos';
+            $idnumber = 'tecnicos';
+        }
+
+        if ($cursonivel == 'D') {
+            $nome = 'Doutorados';
+            $idnumber = 'doutorados';
+        }
+
+        if ($cursonivel == 'U') {
+            $nome = 'Ensino Fundamental';
+            $idnumber = 'ensino-fundamental';
+        }
+
+        if ($cursonivel == 'I') {
+            $nome = 'Ensino Infantil';
+            $idnumber = 'ensino-Infantil';
+        }
+
+        $nivel = new stdClass();
+        $nivel->nome = $nome;
+        $nivel->idnumber = $idnumber;
+
+        return $nivel;
     }
 
 }

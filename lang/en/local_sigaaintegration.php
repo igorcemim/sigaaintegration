@@ -55,6 +55,7 @@ $string['manageintegration'] = 'SIGAA Integration - Manage Integration';
 $string['period'] = 'Period (year/semester)';
 $string['period_help'] = 'Enter the period for processing.';
 $string['importenrollments'] = 'Import enrollments';
+$string['importenrollments_scheduled'] = 'Import enrollments (Scheduled)';
 $string['importcourses'] = 'Import courses';
 $string['archivecourses'] = 'Archive courses';
 $string['import'] = 'Import';

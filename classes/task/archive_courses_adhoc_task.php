@@ -28,7 +28,6 @@ use core\task\adhoc_task;
 use core_course_category;
 use Exception;
 use local_sigaaintegration\configuration;
-use local_sigaaintegration\sigaa_constants;
 use local_sigaaintegration\sigaa_periodo_letivo;
 use stdClass;
 
