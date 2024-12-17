@@ -15,19 +15,19 @@ Este repositório utiliza um modelo simplificado de versionamento, composto pela
 
 - Faça download do pacote .zip última release disponível.
 ```
-wget https://github.com/igorcemim/sigaaintegration/archive/refs/tags/v1.0.7.zip
+wget https://github.com/igorcemim/sigaaintegration/archive/refs/tags/v1.0.8.zip
 ```
 - Mova o pacote para a pasta `local/` da instalação do Moodle.
 ```
-mv sigaaintegration-1.0.7.zip /var/www/html/moodle/local
+mv sigaaintegration-1.0.8.zip /var/www/html/moodle/local
 ```
 - Realize a extração do pacote.
 ```
-unzip sigaaintegration-1.0.7.zip
+unzip sigaaintegration-1.0.8.zip
 ```
 - Renomeie o diretório extraído.
 ```
-mv sigaaintegration-1.0.7 sigaaintegration
+mv sigaaintegration-1.0.8 sigaaintegration
 ```
 
 ## Método 2 (git)
