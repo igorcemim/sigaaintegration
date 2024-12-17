@@ -41,6 +41,21 @@ class manage_integration extends \moodleform
         $this->_form->addHelpButton('period', 'period', 'local_sigaaintegration');
 
         $this->_form->addElement('header', 'importcoursesheader', get_string('importcourses', 'local_sigaaintegration'));
+
+        $this->_form->addElement('date_time_selector', 'startdate', get_string('startdate'));
+        // Recupera o último valor utilizado
+        $lastStartDate = get_config('local_sigaaintegration', 'last_startdate');
+        if ($lastStartDate !== null) {
+            $this->_form->setDefault('startdate', $lastStartDate);
+        }
+
+        $this->_form->addElement('date_time_selector', 'enddate', get_string('enddate'));
+        // Recupera o último valor utilizado
+        $lastEndDate = get_config('local_sigaaintegration', 'last_enddate');
+        if ($lastEndDate !== null) {
+            $this->_form->setDefault('enddate', $lastEndDate);
+        }
+
         $this->_form->addElement('submit', 'courses', get_string('import', 'local_sigaaintegration'));
         $this->_form->setExpanded('importcoursesheader');
 
@@ -67,6 +82,17 @@ class manage_integration extends \moodleform
             }
             if (!sigaa_periodo_letivo::validate($data['period'])) {
                 $errors['period'] = 'O período informado deve ser válido, utilize o formato ano/período. Exemplo: 2024/1';
+            }
+        }
+        if (isset($data['courses'])) {
+            if (empty($data['startdate'])) {
+                $errors['startdate'] = 'A Data de início dos cursos não foi informada.';
+            }
+            if (empty($data['enddate'])) {
+                $errors['enddate'] = 'A Data de término dos cursos não foi informada.';
+            }
+            if (!empty($data['enddate']) && !empty($data['startdate']) && ((int) $data['startdate'] >= (int) $data['enddate'])) {
+                $errors['enddate'] = 'A Data de término dos cursos deve ser maior que a Data de início.';
             }
         }
         if (isset($data['archivecourses'])) {

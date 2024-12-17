@@ -47,9 +47,15 @@ class sigaa_courses_sync {
 
     private object $campometadata;
 
-    public function __construct(string $ano, string $periodo) {
+    private int $datafim;
+
+    private int $datainicio;
+
+    public function __construct(string $ano, string $periodo, int $datainicio, int $datafim) {
         $this->ano = $ano;
         $this->periodo = $periodo;
+        $this->datainicio = $datainicio;
+        $this->datafim = $datafim;
         $this->editingteacherroleid = configuration::getIdPapelProfessor();
         $this->basecategoryid = configuration::getIdCategoriaBase();
         $this->campocpf = configuration::getCampoCPF();
@@ -98,7 +104,8 @@ class sigaa_courses_sync {
         $infodisciplina->summary = '';
         $infodisciplina->summaryformat = FORMAT_PLAIN;
         $infodisciplina->format = 'topics';
-        $infodisciplina->startdate = time();
+        $infodisciplina->startdate = $this->datainicio;
+        $infodisciplina->enddate = $this->datafim;
 
         return $infodisciplina;
     }
@@ -130,17 +137,17 @@ class sigaa_courses_sync {
             return;
         }
 
-        $peloMenosUmProfessorEncontrado = $this->validar_professores_disciplina($dadosdisciplina['docentes']);
-        if (!$peloMenosUmProfessorEncontrado) {
-            mtrace(sprintf(
-                'ERRO: Nenhum professor da disciplina foi encontrado. Disciplina não criada. disciplina: %s',
-                $infodisciplina->idnumber
-            ));
-            return;
-        }
-
         try {
             $categoriadisciplina = $this->criar_arvore_categorias($dadosmatricula, $dadosdisciplina);
+
+            $peloMenosUmProfessorEncontrado = $this->validar_professores_disciplina($dadosdisciplina['docentes']);
+            if (!$peloMenosUmProfessorEncontrado) {
+                mtrace(sprintf(
+                    'ERRO: Nenhum professor da disciplina foi encontrado. Disciplina não criada. disciplina: %s',
+                    $infodisciplina->idnumber
+                ));
+                return;
+            }
 
             $disciplina = $this->criar_disciplina($categoriadisciplina, $infodisciplina, $dadosmatricula, $dadosdisciplina);
 
@@ -272,6 +279,7 @@ class sigaa_courses_sync {
         $course->idnumber = $infodisciplina->idnumber;
         $course->category = $categoriadisciplina->id;
         $course->startdate = $infodisciplina->startdate;
+        $course->enddate = $infodisciplina->enddate;
 
         // Monta os campos customizados com a origem e os metadados da disciplina
         $course->{'customfield_' . $this->campoperiodoletivo->shortname} = $metadata['periodo'];

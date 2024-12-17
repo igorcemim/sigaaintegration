@@ -37,6 +37,20 @@ function setTaskData($task, $periodo) {
     ]);
 }
 
+function setCourseTaskData($task, $data) {
+    $periodoletivo = sigaa_periodo_letivo::buildFromPeriodoFormatado($data->period);
+
+    $task->set_custom_data((object) [
+        'ano' => $periodoletivo->getAno(),
+        'periodo' => $periodoletivo->getPeriodo(),
+        'data_inicio' => $data->startdate,
+        'data_fim' => $data->enddate,
+    ]);
+
+    set_config('last_startdate', $data->startdate, 'local_sigaaintegration');
+    set_config('last_enddate', $data->enddate, 'local_sigaaintegration');
+}
+
 $returnurl = new moodle_url('/local/sigaaintegration/manageintegration.php');
 
 admin_externalpage_setup('local_sigaaintegration_manageintegration');
@@ -64,8 +78,12 @@ if ($data = $form->get_data()) {
     }
 
     if (!empty($task)) {
-        if (isset($data->enrollments) || isset($data->courses)) {
+        if (isset($data->enrollments)) {
             setTaskData($task, $data->period);
+        }
+
+        if (isset($data->courses)) {
+            setCourseTaskData($task, $data);
         }
 
         if (isset($data->archivecourses)) {
